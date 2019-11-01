@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="true">
+	
+	<property name="pattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%50logger{50}] %X{traceId} -> %msg%n" />
+	
+	<!-- 控制台 -->
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>${pattern}</pattern>
+		</encoder>
+	</appender>
+
+	<root level="DEBUG">
+		<appender-ref ref="STDOUT"/>
+	</root>
+</configuration>
