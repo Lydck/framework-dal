@@ -12,6 +12,10 @@ import org.dom4j.Document;
 import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
 
+import com.taiping.framework.dal.constant.DbType;
+
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**解析项目中sqlMap下的
@@ -21,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class XmlParser {
 	
-	private static final Map<String, String> sqls = new ConcurrentHashMap<String, String>();
+	private static final Map<String, SqlDbType> sqls = new ConcurrentHashMap<>();
 	
 	static {
 		log.debug("Initializing sqlMap Resources...");
@@ -43,11 +47,19 @@ public class XmlParser {
 				Document xmlDoc = DocumentHelper.parseText(xml);
 				Element root = xmlDoc.getRootElement();
 				String nameSpace = root.attribute("namespace").getText();
+				String dbType = root.attribute("dbType").getText();
+				DbType type = DbType.getEnum(dbType);
+				// 当前默认为Oracle
+				if(type == null) {
+					type = DbType.ORACLE;
+				}
 				@SuppressWarnings("unchecked")
 				List<Element> elements = root.elements();
 				for(Element e : elements) {
 					String id = e.attributeValue("id");
-					sqls.put(nameSpace + "." + id, e.getTextTrim());
+					String sqlID = nameSpace + "." + id;
+					SqlDbType sqlDbType = new SqlDbType(sqlID, e.getTextTrim(), type);
+					sqls.putIfAbsent(sqlID, sqlDbType);
 				}
 			} catch (Exception e) {
 				log.error("Initializing sqlMap Resources error:", e);
@@ -62,7 +74,29 @@ public class XmlParser {
 	}
 	
 	public static String getOrgSql(String sqlId) {
-		return sqls.get(sqlId);
+		return sqls.get(sqlId).orgSql;
+	}
+	
+	public static DbType getDbType(String sqlId) {
+		return sqls.get(sqlId).dbType;
+	}
+	
+	@Setter
+	@Getter
+	private static class SqlDbType {
+		
+		private String sqlId;
+		
+		private String orgSql;
+		
+		private DbType dbType;
+
+		public SqlDbType(String sqlId, String orgSql, DbType dbType) {
+			super();
+			this.sqlId = sqlId;
+			this.orgSql = orgSql;
+			this.dbType = dbType;
+		}
 	}
 
 }

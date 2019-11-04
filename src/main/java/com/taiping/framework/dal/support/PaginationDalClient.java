@@ -6,6 +6,7 @@ import java.util.Map;
 import javax.sql.DataSource;
 
 import com.taiping.framework.dal.client.PageDalClient;
+import com.taiping.framework.dal.constant.DbType;
 import com.taiping.framework.dal.mapper.RowMapperFactory;
 import com.taiping.framework.dal.page.Page;
 import com.taiping.framework.dal.page.PageResult;
@@ -26,6 +27,7 @@ public class PaginationDalClient extends DefaultDalClient implements PageDalClie
 	@Override
 	public <T> PageResult<T> queryForList(String sqlId, Map<String, Object> paramMap, Class<T> requiredType, Page page) {
 		String orgSql = XmlParser.getOrgSql(sqlId);
+		DbType dbType = XmlParser.getDbType(sqlId);
 		/** FreeMarker模板渲染 */
 		String sql = FreeMarkerParser.processTemplate(orgSql, paramMap);
 		List<T> list = null;
@@ -38,9 +40,9 @@ public class PaginationDalClient extends DefaultDalClient implements PageDalClie
         logMessage("queryForList", sql, paramMap);
         long beginDate = System.currentTimeMillis();
         /** 获取数据总数 */
-		this.configurePagination(OracleDialect.getRowCountSql(sql), paramMap, page);
+		this.configurePagination(dbType.getDialect().getRowCountSql(sql), paramMap, page);
         /** 执行分页查询 */
-        list = jdbcTemplate.query(OracleDialect.getLimitString(sql), paramMap, new RowMapperFactory<T>(requiredType).getRowMapper());
+        list = jdbcTemplate.query(dbType.getDialect().getLimitString(sql), paramMap, new RowMapperFactory<T>(requiredType).getRowMapper());
         logMessage("queryForList", sql, paramMap, System.currentTimeMillis() - beginDate);
         return new PageResult<T>(list, page);
 	}
